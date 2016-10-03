@@ -3,7 +3,7 @@ require('ssl-root-cas').inject();
 var
   cluster = require('cluster')
   , numCPUs = require('os').cpus().length
-  , App = require(__dirname + '/app/core')
+  , App = require(__dirname + '/app/main')
   , express = App.express
   , config = App.config;
 
@@ -13,9 +13,7 @@ if(!config)
 if(config.useCluser) {
 
   if (cluster.isMaster) {
-
-    console.log('cluster is master')
-
+    
     for (var i = 0; i < numCPUs; i++) {
       cluster.fork();
     }

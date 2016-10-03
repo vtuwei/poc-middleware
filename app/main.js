@@ -1,12 +1,12 @@
 var
-  express = require('express')
+  cluster = require('cluster')
+  , express = require('express')
   , bunyan = require('bunyan')
   , fs = require('fs')
   , bodyParser = require('body-parser')
   , cookieParser = require('cookie-parser')
   , path = require('path')
   , config = require('./config')
-  , passport = require('passport')
   , url = require('url')
   , httpProxy = require('http-proxy');
 
@@ -46,7 +46,7 @@ var App = {
       }
     };
 
-    if(url.parse(this.config.etl.url).protocol === 'https') {
+    if(url.parse(this.config.etl.url).protocol.indexOf('https') != -1) {
       etlParams.secure = false;
       etlParams.agent = https.globalAgent;
     }
@@ -62,11 +62,25 @@ var App = {
       amrsParams.agent = https.globalAgent;
     }
 
-    App.etlProxy = httpProxy.createProxyServer(etlParams)
-      .listen(this.config.etl.proxyRange[0]);
+    if(this.config.useCluser && !cluster.isMaster) {
 
-    App.amrsProxy = httpProxy.createProxyServer(amrsParams)
-      .listen(this.config.amrs.proxyRange[0]);
+      var workerId = cluster.worker.id;
+
+      App.etlProxy = httpProxy.createProxyServer(etlParams)
+        .listen(this.config.etl.proxyRange[0] + (workerId -1));
+
+      App.amrsProxy = httpProxy.createProxyServer(amrsParams)
+        .listen(this.config.amrs.proxyRange[0]+ (workerId -1));
+
+    } else if (!this.config.useCluser) {
+
+      App.etlProxy = httpProxy.createProxyServer(etlParams)
+        .listen(this.config.etl.proxyRange[0]);
+
+      App.amrsProxy = httpProxy.createProxyServer(amrsParams)
+        .listen(this.config.amrs.proxyRange[0]);
+
+    }
   },
   routes: function() {
 
