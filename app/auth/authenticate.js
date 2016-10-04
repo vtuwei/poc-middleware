@@ -47,29 +47,37 @@ function auth_user(App,username, password) {
         else {
 
           //TODO - handle login retries
-          reject(data);
+          reject({
+            success: false,
+            data: data
+          });
         }
       });
     })
     .catch(function (err) {
         return new Promise(function(resolve, reject) {
           reject({
-            authenticated: false,
-            error: err.message
-          })
+            success: false,
+            data: {
+              authenticated: false,
+              error: err.message
+            }
+          });
         });
     });
 };
 
-function generate_token(App, user) {
+function generate_token(App, user_data) {
 
-  var id_encrypted = utils.encrypy(App.config.auth.secret, user.id + '');
+  var user = user_data.user;
+
+  var id_encrypted = utils.encrypy(App.config.auth.secret, user.uuid + '');
 
   return new Promise(function(resolve, reject) {
 
     var token = jwt.sign({ id: id_encrypted }, App.config.auth.secret, {
-      expiresIn: '2 days', // expires in 48 hours
-      algorithm: 'HS512'
+      expiresIn: App.config.auth.expiresIn, // expires in 48 hours
+      algorithm: App.config.auth.algorithm
     });
 
     resolve({
@@ -86,24 +94,17 @@ function store_token(App, user_data, token_data) {
     resolve({
       success: true,
       token: token_data.token,
-      user_data: user_data
+      data: user_data
     })
   });
 
-  // var token = token_data.token;
-  // var id_encrypted = token_data.id_encrypted;
-  //
-  // var redis_object = {
-  //   user: {
-  //     id: user.id,
-  //     username: user.username,
-  //     email: user.email,
-  //     image_path: user.image_path,
-  //     status: user.status,
-  //     createdAt: user.createdAt
-  //   }
-  // }
-  //
+  var token = token_data.token;
+  var id_encrypted = token_data.id_encrypted;
+
+  var redis_object = {
+    user_data: user_data
+  }
+
   // var redis = App.get('redis');
   //
   // return new Promise(function(resolve, reject) {
