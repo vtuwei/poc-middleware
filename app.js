@@ -13,7 +13,7 @@ if(!config)
 if(config.useCluser) {
 
   if (cluster.isMaster) {
-    
+
     for (var i = 0; i < numCPUs; i++) {
       cluster.fork();
     }
@@ -29,7 +29,7 @@ if(config.useCluser) {
     server.on("error", onError);
     server.on("listening", onListening);
   }
-
+  
 } else {
 
   var server = express.listen(config.port);

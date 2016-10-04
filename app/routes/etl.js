@@ -1,11 +1,14 @@
 var
-  express = require('express');
+  express = require('express')
+  , authorize = require('../auth/authorize');
 
 module.exports.route = function(App) {
 
   var router = express.Router();
   var config = App.config;
   var proxy = App.etlProxy;
+
+  authorize.auth(App, router);
 
   router.get(/\/etl(.*)/, function(req, res) {
     console.log('etl')

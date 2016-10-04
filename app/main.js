@@ -8,8 +8,9 @@ var
   , path = require('path')
   , config = require('./config')
   , url = require('url')
-  , httpProxy = require('http-proxy');
-
+  , httpProxy = require('http-proxy')
+  , multipart = require('connect-multiparty');
+  
 var
   indexRouter = require('./routes/index')
   , loginRouter = require('./routes/login')
@@ -27,8 +28,12 @@ var App = {
 
     this.express = express();
 
-    this.express.use(require('cookie-parser')());
-    this.express.use(require('body-parser').urlencoded({ extended: true }));
+    this.express.use(multipart());
+
+    this.express.use(bodyParser.urlencoded({ extended: true }));
+
+    // parse application/json
+    this.express.use(bodyParser.json());
 
     this.proxies();
     this.routes();
@@ -86,8 +91,12 @@ var App = {
 
     this.express.use("/", indexRouter.route(App));
     this.express.use("/", loginRouter.route(App));
-    this.express.use("/", amrsRouter.route(App));
-    this.express.use("/", etlRouter.route(App));
+
+    var amrsRoute = amrsRouter.route(App);
+    this.express.use("/", amrsRoute);
+
+    var etlRoute = etlRouter.route(App);
+    this.express.use("/", etlRoute);
   }
 };
 
