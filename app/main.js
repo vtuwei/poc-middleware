@@ -1,7 +1,6 @@
 var
   cluster = require('cluster')
   , express = require('express')
-  , bunyan = require('bunyan')
   , fs = require('fs')
   , bodyParser = require('body-parser')
   , cookieParser = require('cookie-parser')
@@ -10,12 +9,15 @@ var
   , url = require('url')
   , httpProxy = require('http-proxy')
   , multipart = require('connect-multiparty');
-  
+
 var
   indexRouter = require('./routes/index')
   , loginRouter = require('./routes/login')
   , etlRouter = require('./routes/etl')
-  , amrsRouter = require('./routes/amrs');
+  , amrsRouter = require('./routes/amrs')
+  , logger = require('./logger')
+  , services = require('./services')
+  , store = require('./store');
 
 var App = {
   config: null,
@@ -35,8 +37,10 @@ var App = {
     // parse application/json
     this.express.use(bodyParser.json());
 
+    this.log = logger.init(App);
     this.proxies();
     this.routes();
+    services.init(App);
 
     return this;
   },
@@ -97,6 +101,12 @@ var App = {
 
     var etlRoute = etlRouter.route(App);
     this.express.use("/", etlRoute);
+  },
+  set: function(key, value) {
+    store.set(key, value);
+  },
+  get: function(key) {
+    return store.get(key);
   }
 };
 
