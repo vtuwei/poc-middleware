@@ -1,17 +1,22 @@
+var
+  crypto = require('crypto')
+  , algorithm = 'aes-256-ctr';
+
 module.exports = {
-  is_email: is_email,
-  encrypy: encrypy
+  encrypt: encrypt,
+  decrypt: decrypt
 }
 
-function is_email(email) {
-    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(email);
+function encrypt(salt, text) {
+  var cipher = crypto.createCipher(algorithm,salt)
+  var crypted = cipher.update(text,'utf8','hex')
+  crypted += cipher.final('hex');
+  return crypted;
 }
 
-function encrypy(salt, password) {
-
-  var sha1 = require('sha1');
-  var sha256 = require('sha256');
-
-  return sha1(sha256(password + salt) + salt);
-};
+function decrypt(salt, text) {
+  var decipher = crypto.createDecipher(algorithm,salt)
+  var dec = decipher.update(text,'hex','utf8')
+  dec += decipher.final('utf8');
+  return dec;
+}

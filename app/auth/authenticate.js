@@ -3,11 +3,79 @@ var
   , rp = require('request-promise')
   , utils = require('../utils');
 
-module.exports = {
-  auth: auth
+module.exports.logout = function(App, token) {
+
+  return new Promise(function(resolve, reject) {
+
+    jwt.verify(token, App.config.auth.secret, function(err, decoded) {
+
+      if (err) {
+
+        reject({ success: false, message: 'Failed to authenticate token' });
+      } else {
+
+        var id = decoded.id;
+
+        var redis = App.get('redis');
+
+        redis.get(id, function(err, data) {
+
+          if(!err) {
+
+            if(!data) {
+              reject({ success: false, message: 'Failed to authenticate token' });
+              return;
+            }
+
+            var user_data = JSON.parse(
+              utils.decrypt(App.config.auth.secret, data)
+            );
+
+            //delete session and remove the object from redis
+
+            var username = user_data.credentials.username;
+            var password = user_data.credentials.password;
+
+            var amrsUrl = App.config.amrs.url;
+
+            var url = amrsUrl + '/amrs/ws/rest/v1/session';
+
+            var auth = 'Basic ' + new Buffer(username + ":" + password).toString('base64');
+
+            var options = {
+              method: 'DELETE',
+              uri: url,
+              headers: {
+                'Authorization': auth
+              },
+              json: true // Automatically stringifies the body to JSON
+            };
+
+            rp(options)
+                .then(function (parsedBody) {
+
+                  redis.del(id);
+                  resolve({
+                    success: true
+                  })
+                })
+                .catch(function (err) {
+                  reject({
+                    success: false,
+                    error: err.message
+                  })
+                });
+
+          } else {
+            reject({ success: false, message: 'Failed to authenticate token' });
+          }
+        });
+      }
+    });
+  });
 }
 
-function auth(App, username, password, params) {
+module.exports.auth = function(App, username, password, params) {
 
   //load user from db
   return auth_user(App, username, password)
@@ -16,7 +84,12 @@ function auth(App, username, password, params) {
       return generate_token(App, user_data)
         .then(function(token) {
 
-          return store_token(App, user_data, token);
+          var credentials = {
+            username: username,
+            password: password
+          }
+
+          return store_token(App, user_data, token, credentials);
         });
     });
 };
@@ -71,12 +144,12 @@ function generate_token(App, user_data) {
 
   var user = user_data.user;
 
-  var id_encrypted = utils.encrypy(App.config.auth.secret, user.uuid + '');
+  var id_encrypted = utils.encrypt(App.config.auth.secret, user.uuid + '__' + user_data.sessionId);
 
   return new Promise(function(resolve, reject) {
 
     var token = jwt.sign({ id: id_encrypted }, App.config.auth.secret, {
-      expiresIn: App.config.auth.expiresIn, // expires in 48 hours
+      expiresIn: App.config.auth.expiresIn,
       algorithm: App.config.auth.algorithm
     });
 
@@ -87,42 +160,37 @@ function generate_token(App, user_data) {
   });
 }
 
-function store_token(App, user_data, token_data) {
-
-  return new Promise(function(resolve, reject) {
-
-    resolve({
-      success: true,
-      token: token_data.token,
-      data: user_data
-    })
-  });
+function store_token(App, user_data, token_data, credentials) {
 
   var token = token_data.token;
   var id_encrypted = token_data.id_encrypted;
 
   var redis_object = {
-    user_data: user_data
-  }
+    user_data: user_data,
+    credentials: credentials
+  };
 
-  // var redis = App.get('redis');
-  //
-  // return new Promise(function(resolve, reject) {
-  //
-  //   redis.set(id_encrypted, JSON.stringify(redis_object), function(err, resp) {
-  //
-  //     if(!err) {
-  //       resolve({
-  //         success: true,
-  //         token: token
-  //       })
-  //     } else {
-  //
-  //       reject({
-  //         success: false,
-  //         message: 'Something went wrong. Please try again after some time'
-  //       });
-  //     }
-  //   });
-  // });
+  var encrypted = utils.encrypt(App.config.auth.secret, JSON.stringify(redis_object));
+
+  var redis = App.get('redis');
+
+  return new Promise(function(resolve, reject) {
+
+    redis.set(id_encrypted, encrypted, function(err, resp) {
+
+      if(!err) {
+
+        resolve({
+          success: true,
+          token: token
+        })
+      } else {
+
+        reject({
+          success: false,
+          message: 'Something went wrong. Please try again after some time'
+        });
+      }
+    });
+  });
 }

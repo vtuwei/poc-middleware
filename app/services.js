@@ -7,10 +7,6 @@ module.exports.init = function(App) {
   return init_redis(App)
     .then(function(redis) {
       App.set('redis', redis);
-      return init_elastic_search(App)
-        .then(function(elastic_client) {
-          App.set('elastic_client', elastic_client);
-        });
       });
 };
 
@@ -45,28 +41,5 @@ function init_redis(App) {
 
       reject(err);
 	  });
-  });
-}
-
-function init_elastic_search(App) {
-
-  var config = App.config;
-
-  var elasticClient = new elasticsearch.Client({
-    host: config.elastic_search.host,
-    //log: config.elastic_search.log
-  });
-
-  return new Promise(function(resolve, reject) {
-    elasticClient.ping({
-      requestTimeout: Infinity,
-      hello: "elasticsearch!"
-    }, function(err) {
-
-      if(err)
-        reject(err);
-      else
-        resolve(elasticClient);
-    });
   });
 }

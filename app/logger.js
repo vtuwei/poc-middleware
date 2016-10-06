@@ -1,7 +1,7 @@
 var
   _ = require('underscore')
   , bunyan = require('bunyan')
-  , ElasticSearch = require('bunyan-elasticsearch');;
+  , ElasticSearchStream = require('bunyan-elasticsearch');;
 
 module.exports.init = function(App) {
 
@@ -32,7 +32,7 @@ function create_streams(App, streams) {
         break;
       case 'elasticsearch':
 
-        var esStream = new ElasticSearch({
+        var esStream = new ElasticSearchStream({
           indexPattern: '[logstash-]YYYY.MM.DD',
           type: 'logs',
           host: App.config.elastic_search.host
@@ -41,7 +41,7 @@ function create_streams(App, streams) {
         esStream.on('error', function (err) {
           console.log('Elasticsearch Stream Error:', err.stack);
         });
-        
+
         str.push({
           stream: esStream
         });

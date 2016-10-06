@@ -11,12 +11,10 @@ module.exports.route = function(App) {
   authorize.auth(App, router);
 
   router.get(/\/amrs(.*)/, function(req, res) {
-    console.log('amrs')
     proxy.web(req, res, { target: config.amrs.url });
   });
 
   router.post(/\/amrs(.*)/, function(req, res) {
-    console.log('amrs post')
     proxy.web(req, res, { target: config.amrs.url });
   });
 
