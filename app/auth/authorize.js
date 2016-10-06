@@ -16,7 +16,7 @@ module.exports.auth = function(App, route) {
 
         if (err) {
 
-          res.json({ success: false, message: 'Failed to authenticate token' });
+          res.status(401).json({ success: false, message: 'Failed to authenticate token' });
         } else {
 
           var id = decoded.id;
@@ -49,13 +49,13 @@ module.exports.auth = function(App, route) {
                 next();
 
             } else {
-              res.json({ success: false, message: 'Failed to authenticate token' });
+              res.status(401).json({ success: false, message: 'Failed to authenticate token' });
             }
           });
         }
       });
     } else
-      res.json({ success: false, message: 'Failed to authenticate token' });
+      res.status(401).json({ success: false, message: 'Failed to authenticate token' });
   });
 };
 
@@ -81,7 +81,7 @@ function log(App, req) {
   if(req.user) {
 
     var username = req.user.user_data.user.username;
-    
+
     App.log.info({
       username: username,
       key: 'req',

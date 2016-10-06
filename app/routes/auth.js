@@ -21,7 +21,7 @@ module.exports.route = function(App) {
         success: false,
         errors: errors
       });
-      
+
       return;
     }
 
@@ -33,7 +33,7 @@ module.exports.route = function(App) {
         res.json(data);
       })
       .catch(function(err) {
-        res.json(err);
+        res.status(401).json(err);
       });
   });
 
@@ -48,7 +48,7 @@ module.exports.route = function(App) {
         res.json(data);
       })
       .catch(function(err) {
-        res.json(err);
+        res.json(err); //
       });
   });
 

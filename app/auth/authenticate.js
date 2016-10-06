@@ -145,7 +145,7 @@ function generate_token(App, user_data) {
   var user = user_data.user;
 
   var id_encrypted = utils.encrypt(App.config.auth.secret, user.uuid + '__' + user_data.sessionId);
-
+  
   return new Promise(function(resolve, reject) {
 
     var token = jwt.sign({ id: id_encrypted }, App.config.auth.secret, {
